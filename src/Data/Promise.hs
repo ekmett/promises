@@ -23,6 +23,7 @@ import Control.Applicative
 import Control.Concurrent.MVar
 import Control.Exception
 import Control.Monad (ap)
+import Control.Monad.Fix
 import Control.Monad.ST.Class
 import Control.Monad.ST.Unsafe
 import Data.Typeable
@@ -100,6 +101,13 @@ instance Monad (Lazy s) where
 instance MonadST (Lazy s) where
   type World (Lazy s) = s
   liftST m = Lazy $ \_ -> Pure <$> unsafeSTToIO m
+
+instance MonadFix (Lazy s) where
+  mfix f = do
+    a <- promise_
+    r <- f (demand a)
+    a != r
+    return r
 
 --------------------------------------------------------------------------------
 -- * Promises, Promises
