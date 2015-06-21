@@ -91,6 +91,7 @@ drive d mv v = unsafePerformIO $ tryTakeMVar v >>= \case
 
 -- | A lazy, demand-driven calculation that can create and fulfill promises.
 newtype Lazy s a = Lazy { getLazy :: forall x. MVar (Maybe (IO (K s x))) -> IO (K s a) }
+  deriving Typeable
 
 type role Lazy nominal representational
 
@@ -128,6 +129,7 @@ instance MonadFix (Lazy s) where
 -- | A lazy I-Var.
 data Promise s a where
   Promise :: MVar a -> a -> Promise s a
+  deriving Typeable
 
 -- | Demand the result of a promise.
 demand :: Promise s a -> a
