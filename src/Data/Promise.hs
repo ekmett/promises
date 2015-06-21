@@ -16,10 +16,9 @@
 -- Stability   :  experimental
 -- Portability :  non-portable
 --
--- Lazy promises.
+-- Lazy demand-driven promises.
 --
 -----------------------------------------------------------------------------
-
 
 module Data.Promise
   ( Lazy, runLazy, runLazy_
@@ -192,5 +191,9 @@ runLazy f d = unsafePerformIO $ do
 
 -- | Run a lazy computation. The final answer is given in the form of a promise to be fulfilled.
 -- If the promises is unfulfilled then an 'BrokenPromise' will be thrown.
+--
+-- @
+-- 'runLazy_' k ≡ 'runLazy' k ('throw' 'BrokenPromise')
+-- @
 runLazy_ :: (forall s. Promise s a -> Lazy s b) -> a
 runLazy_ k = runLazy k $ throw BrokenPromise
