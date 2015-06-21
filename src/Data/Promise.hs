@@ -1,9 +1,11 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RoleAnnotations #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE Trustworthy #-}
 {-# OPTIONS_GHC -fno-cse -fno-full-laziness #-}
 
 -----------------------------------------------------------------------------
@@ -28,7 +30,9 @@ module Data.Promise
   , BrokenPromise(..)
   ) where
 
+#if __GLASGOW_HASKELL__ < 710
 import Control.Applicative
+#endif
 import Control.Concurrent.MVar
 import Control.Exception
 import Control.Monad (ap)
