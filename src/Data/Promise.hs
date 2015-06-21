@@ -143,7 +143,7 @@ Promise v _ != a = Lazy $ \ _ -> do
 -- * Running It All
 --------------------------------------------------------------------------------
 
-runLazy :: (forall s. Promise s a -> Lazy s ()) -> a -> a
+runLazy :: (forall s. Promise s a -> Lazy s b) -> a -> a
 runLazy f d = unsafePerformIO $ do
   mv <- newEmptyMVar
   v <- newEmptyMVar
@@ -152,5 +152,5 @@ runLazy f d = unsafePerformIO $ do
   return $ demand iv
 {-# NOINLINE runLazy #-}
 
-runLazy_ :: (forall s. Promise s a -> Lazy s ()) -> a
+runLazy_ :: (forall s. Promise s a -> Lazy s b) -> a
 runLazy_ k = runLazy k $ throw BrokenPromise
