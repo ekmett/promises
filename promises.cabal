@@ -16,6 +16,7 @@ synopsis:      Lazy promises
 description:   Lazy promises
 
 extra-source-files:
+  .travis.yml
   .gitignore
   README.markdown
   CHANGELOG.markdown
