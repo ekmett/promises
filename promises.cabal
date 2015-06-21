@@ -1,6 +1,6 @@
 name:          promises
 category:      Lazy, Concurrent
-version:       0
+version:       0.1
 license:       BSD3
 cabal-version: >= 1.10
 license-file:  LICENSE
