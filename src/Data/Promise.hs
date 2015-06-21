@@ -147,12 +147,16 @@ promise d = Lazy $ \mv -> do
 
 -- | Create an empty promise. If you observe the demanded answer of this promise then either by the end of the current lazy
 -- computation we'll provide a "real" answer, or you'll get an error.
+--
+-- @
+-- 'promise_' ≡ 'promise' ('throw' 'BrokenPromise')
+-- @
 promise_ :: Lazy s (Promise s a)
 promise_ = promise $ throw BrokenPromise
 
 infixl 0 !=
 
--- | Fulfill a promise.
+-- | Fulfill a promise. Each promise should only be fulfilled once.
 --
 -- >>> runLazy_ $ \p -> p != "good"
 -- "good"
@@ -165,6 +169,7 @@ infixl 0 !=
 --
 -- >>> runLazy (\p -> return ()) "default"
 -- "default"
+--
 (!=) :: Promise s a -> a -> Lazy s ()
 Promise v _ != a = Lazy $ \ _ -> do
   putMVar v a
