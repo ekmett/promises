@@ -39,6 +39,8 @@ import Data.Typeable
 import System.IO.Unsafe
 import Unsafe.Coerce
 
+
+-- | Thrown when the answer for an unfulfillable promise is demanded.
 data BrokenPromise = BrokenPromise deriving (Show, Typeable)
 instance Exception BrokenPromise
 
@@ -87,6 +89,7 @@ drive d mv v = unsafePerformIO $ tryTakeMVar v >>= \case
 -- * Demand driven computations
 --------------------------------------------------------------------------------
 
+-- | A lazy, demand-driven calculation that can create and fulfill promises.
 newtype Lazy s a = Lazy { getLazy :: forall x. MVar (Maybe (IO (K s x))) -> IO (K s a) }
 
 type role Lazy nominal representational
@@ -126,7 +129,7 @@ instance MonadFix (Lazy s) where
 data Promise s a where
   Promise :: MVar a -> a -> Promise s a
 
--- | Demand the result of an I-Var
+-- | Demand the result of a promise.
 demand :: Promise s a -> a
 demand (Promise _ a) = a
 
@@ -136,13 +139,26 @@ promise d = Lazy $ \mv -> do
   v <- newEmptyMVar
   return $ Pure $ Promise v (drive d mv v)
 
--- | Promise that by the end of the computation we'll provide a "real" answer, or you'll get an error.
+-- | Create an empty promise. If you observe the demanded answer of this promise then either by the end of the current lazy
+-- computation we'll provide a "real" answer, or you'll get an error.
 promise_ :: Lazy s (Promise s a)
 promise_ = promise $ throw BrokenPromise
 
 infixl 0 !=
 
 -- | Fulfill a promise.
+--
+-- >>> runLazy_ $ \p -> p != "good"
+-- "good"
+--
+-- >>> runLazy_ $ \p -> do q <- promise_; p != "yay! " ++ demand q; q != "it works."
+-- "yay! it works."
+--
+-- >>> runLazy_ $ \p -> return ()
+-- *** Exception: BrokenPromise
+--
+-- >>> runLazy (\p -> return ()) "default"
+-- "default"
 (!=) :: Promise s a -> a -> Lazy s ()
 Promise v _ != a = Lazy $ \ _ -> do
   putMVar v a
@@ -152,6 +168,8 @@ Promise v _ != a = Lazy $ \ _ -> do
 -- * Running It All
 --------------------------------------------------------------------------------
 
+-- | Run a lazy computation. The final answer is given in the form of a promise to be fulfilled.
+-- If the promises is unfulfilled then an user supplied default value will be returned.
 runLazy :: (forall s. Promise s a -> Lazy s b) -> a -> a
 runLazy f d = unsafePerformIO $ do
   mv <- newEmptyMVar
@@ -161,5 +179,7 @@ runLazy f d = unsafePerformIO $ do
   return $ demand iv
 {-# NOINLINE runLazy #-}
 
+-- | Run a lazy computation. The final answer is given in the form of a promise to be fulfilled.
+-- If the promises is unfulfilled then an 'BrokenPromise' will be thrown.
 runLazy_ :: (forall s. Promise s a -> Lazy s b) -> a
 runLazy_ k = runLazy k $ throw BrokenPromise
