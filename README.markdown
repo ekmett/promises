@@ -1,9 +1,9 @@
 promises
-==========
+========
 
 [![Build Status](https://secure.travis-ci.org/ekmett/promises.png?branch=master)](http://travis-ci.org/ekmett/promises)
 
-Lazy promises
+Lazy demand-driven promises
 
 Contact Information
 -------------------
