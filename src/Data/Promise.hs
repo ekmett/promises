@@ -21,7 +21,11 @@
 -----------------------------------------------------------------------------
 
 module Data.Promise
-  ( Lazy, runLazy, runLazy_
+  ( Lazy
+  , runLazy
+  , runLazy_
+  , runLazyIO
+  , runLazyIO_
   , Promise(..)
   , promise, promise_
   , (!=)
@@ -178,15 +182,21 @@ Promise v _ != a = Lazy $ \ _ -> do
 -- * Running It All
 --------------------------------------------------------------------------------
 
--- | Run a lazy computation. The final answer is given in the form of a promise to be fulfilled.
--- If the promises is unfulfilled then an user supplied default value will be returned.
-runLazy :: (forall s. Promise s a -> Lazy s b) -> a -> a
-runLazy f d = unsafePerformIO $ do
+runLazyIO :: (forall s. Promise s a -> Lazy s b) -> a -> IO a
+runLazyIO f d = do
   mv <- newEmptyMVar
   v <- newEmptyMVar
   let iv = Promise v (drive d mv v)
   putMVar mv (Just (getLazy (f iv) mv))
   return $ demand iv
+
+runLazyIO_ :: (forall s. Promise s a -> Lazy s b) -> IO a
+runLazyIO_ k = runLazyIO k $ throw BrokenPromise
+
+-- | Run a lazy computation. The final answer is given in the form of a promise to be fulfilled.
+-- If the promises is unfulfilled then an user supplied default value will be returned.
+runLazy :: (forall s. Promise s a -> Lazy s b) -> a -> a
+runLazy f d = unsafePerformIO (runLazyIO f d)
 {-# NOINLINE runLazy #-}
 
 -- | Run a lazy computation. The final answer is given in the form of a promise to be fulfilled.
