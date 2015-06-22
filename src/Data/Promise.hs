@@ -40,12 +40,11 @@ import Control.Concurrent.MVar
 import Control.Exception
 import Control.Monad (ap)
 import Control.Monad.Fix
-import Control.Monad.ST.Class
+import Control.Monad.Primitive
 import Control.Monad.ST.Unsafe
 import Data.Typeable
 import System.IO.Unsafe
 import Unsafe.Coerce
-
 
 -- | Thrown when the answer for an unfulfillable promise is demanded.
 data BrokenPromise = BrokenPromise deriving (Show, Typeable)
@@ -118,9 +117,9 @@ instance Monad (Lazy s) where
       go (Fulfilled v k) = return $ Fulfilled v (k >>= go)
     in getLazy m mv >>= go
 
-instance MonadST (Lazy s) where
-  type World (Lazy s) = s
-  liftST m = Lazy $ \_ -> Pure <$> unsafeSTToIO m
+instance PrimMonad (Lazy s) where
+  type PrimState (Lazy s) = s
+  primitive m = Lazy $ \_ -> Pure <$> unsafeSTToIO (primitive m)
 
 instance MonadFix (Lazy s) where
   mfix f = do

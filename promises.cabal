@@ -1,6 +1,6 @@
 name:          promises
 category:      Lazy, Concurrent
-version:       0.1
+version:       0.2
 license:       BSD3
 cabal-version: >= 1.10
 license-file:  LICENSE
@@ -34,5 +34,5 @@ library
     Data.Promise
 
   build-depends:
-    base     >= 4.7   && < 5,
-    monad-st >= 0.2.4 && < 1
+    base      >= 4.7 && < 5,
+    primitive >= 0.6 && < 1
