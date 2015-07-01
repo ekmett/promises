@@ -51,47 +51,6 @@ data BrokenPromise = BrokenPromise deriving (Show, Typeable)
 instance Exception BrokenPromise
 
 --------------------------------------------------------------------------------
--- * Internals
---------------------------------------------------------------------------------
-
-meq :: MVar a -> MVar b -> Bool
-meq a b = a == unsafeCoerce b
-
-data K s a where
-  Pure      :: a -> K s a
-  Fulfilled :: MVar x -> IO (K s a) -> K s a
-
-instance Functor (K s) where
-  fmap f (Pure a) = Pure (f a)
-  fmap f (Fulfilled m k) = Fulfilled m (fmap (fmap f) k)
-
-pump :: a -> IO (K s x) -> MVar a -> IO (Maybe (IO (K s x)))
-pump d m v = m >>= \case
-  Pure _ -> return Nothing
-  Fulfilled u n
-    | meq u v   -> return (Just n)
-    | otherwise -> pump d n v
-
-drive :: a -> MVar (Maybe (IO (K s x))) -> MVar a -> a
-drive d mv v = unsafePerformIO $ tryTakeMVar v >>= \case
-  Just a -> return a -- if we're satisfied give the answer
-  Nothing -> takeMVar mv >>= \case -- grab the lock on this computation
-    Nothing -> do -- it has nothing left to do, so we fail to the default answer
-      putMVar mv Nothing
-      return d
-    Just k -> tryTakeMVar v >>= \case -- ok, check to make sure we haven't been satisfied in the meantime
-      Just a -> do
-        putMVar mv (Just k) -- if so, restore the continuation, and return the answer
-        return a
-      Nothing -> do
-        mk <- pump d k v
-        putMVar mv mk
-        case mk of
-          Nothing -> return d
-          Just _  -> takeMVar v
-{-# NOINLINE drive #-}
-
---------------------------------------------------------------------------------
 -- * Demand driven computations
 --------------------------------------------------------------------------------
 
@@ -206,3 +165,44 @@ runLazy f d = unsafePerformIO (runLazyIO f d)
 -- @
 runLazy_ :: (forall s. Promise s a -> Lazy s b) -> a
 runLazy_ k = runLazy k $ throw BrokenPromise
+
+--------------------------------------------------------------------------------
+-- * Internals
+--------------------------------------------------------------------------------
+
+meq :: MVar a -> MVar b -> Bool
+meq a b = a == unsafeCoerce b
+
+data K s a where
+  Pure      :: a -> K s a
+  Fulfilled :: MVar x -> IO (K s a) -> K s a
+
+instance Functor (K s) where
+  fmap f (Pure a) = Pure (f a)
+  fmap f (Fulfilled m k) = Fulfilled m (fmap (fmap f) k)
+
+pump :: a -> IO (K s x) -> MVar a -> IO (Maybe (IO (K s x)))
+pump d m v = m >>= \case
+  Pure _ -> return Nothing
+  Fulfilled u n
+    | meq u v   -> return (Just n)
+    | otherwise -> pump d n v
+
+drive :: a -> MVar (Maybe (IO (K s x))) -> MVar a -> a
+drive d mv v = unsafePerformIO $ tryTakeMVar v >>= \case
+  Just a -> return a -- if we're satisfied give the answer
+  Nothing -> takeMVar mv >>= \case -- grab the lock on this computation
+    Nothing -> do -- it has nothing left to do, so we fail to the default answer
+      putMVar mv Nothing
+      return d
+    Just k -> tryTakeMVar v >>= \case -- ok, check to make sure we haven't been satisfied in the meantime
+      Just a -> do
+        putMVar mv (Just k) -- if so, restore the continuation, and return the answer
+        return a
+      Nothing -> do
+        mk <- pump d k v
+        putMVar mv mk
+        case mk of
+          Nothing -> return d
+          Just _  -> takeMVar v
+{-# NOINLINE drive #-}
