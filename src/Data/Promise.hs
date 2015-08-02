@@ -3,7 +3,9 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
+#if MIN_VERSION_base(4,7,0)
 {-# LANGUAGE RoleAnnotations #-}
+#endif
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE Trustworthy #-}
 {-# OPTIONS_GHC -fno-cse -fno-full-laziness #-}
@@ -99,7 +101,9 @@ drive d mv v = unsafePerformIO $ tryTakeMVar v >>= \case
 newtype Lazy s a = Lazy { getLazy :: forall x. MVar (Maybe (IO (K s x))) -> IO (K s a) }
   deriving Typeable
 
+#if MIN_VERSION_base(4,7,0)
 type role Lazy nominal representational
+#endif
 
 instance Functor (Lazy s) where
   fmap f (Lazy m) = Lazy $ \mv -> fmap go (m mv) where
