@@ -34,5 +34,5 @@ library
     Data.Promise
 
   build-depends:
-    base      >= 4.7 && < 5,
+    base      >= 4.6 && < 5,
     primitive >= 0.6 && < 1
