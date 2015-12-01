@@ -197,13 +197,13 @@ runLazyIO_ :: (forall s. Promise s a -> Lazy s b) -> IO a
 runLazyIO_ k = runLazyIO k $ throw BrokenPromise
 
 -- | Run a lazy computation. The final answer is given in the form of a promise to be fulfilled.
--- If the promises is unfulfilled then an user supplied default value will be returned.
+-- If the promise is unfulfilled then a user-supplied default value will be returned.
 runLazy :: (forall s. Promise s a -> Lazy s b) -> a -> a
 runLazy f d = unsafePerformIO (runLazyIO f d)
 {-# NOINLINE runLazy #-}
 
 -- | Run a lazy computation. The final answer is given in the form of a promise to be fulfilled.
--- If the promises is unfulfilled then an 'BrokenPromise' will be thrown.
+-- If the promise is unfulfilled then a 'BrokenPromise' will be thrown.
 --
 -- @
 -- 'runLazy_' k ≡ 'runLazy' k ('throw' 'BrokenPromise')
