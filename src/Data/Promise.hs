@@ -106,9 +106,7 @@ type role Lazy nominal representational
 #endif
 
 instance Functor (Lazy s) where
-  fmap f (Lazy m) = Lazy $ \mv -> fmap go (m mv) where
-    go (Pure a)        = Pure (f a)
-    go (Fulfilled v k) = Fulfilled v (fmap (fmap f) k)
+  fmap f (Lazy m) = Lazy $ fmap (fmap f) . m
 
 instance Applicative (Lazy s) where
   pure = return
