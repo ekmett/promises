@@ -111,11 +111,11 @@ instance Functor (Lazy s) where
     go (Fulfilled v k) = Fulfilled v (fmap (fmap f) k)
 
 instance Applicative (Lazy s) where
-  pure = return
+  pure a = Lazy $ \_ -> return $ Pure a
   (<*>) = ap
 
 instance Monad (Lazy s) where
-  return a = Lazy $ \_ -> return $ Pure a
+  return = pure
   m >>= f = Lazy $ \mv -> let
       go (Pure a) = getLazy (f a) mv
       go (Fulfilled v k) = return $ Fulfilled v (k >>= go)
